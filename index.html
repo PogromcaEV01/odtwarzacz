@@ -237,7 +237,7 @@
     drawMatrix();
 
     // =========================================================
-    // --- AUDIO & RADIO LOGIC (GITHUB PAGES FLAT ENGINE) ---
+    // --- AUDIO & RADIO LOGIC (MULTI-FOLDER GITHUB ENGINE) ---
     // =========================================================
 
     const audioPlayer = document.getElementById('audio-player');
@@ -254,9 +254,14 @@
     const trackName = document.getElementById('track-name');
 
     // --- KONFIGURACJA GITHUB ---
-    // Adres URL Twoich plików na GitHub Pages (zakładając folder /audio/)
-    const githubBaseUrl = "https://pogromcaev01.github.io/hijuhuajo-radio/audio/";
-    const ambientFile = "https://aelwyd.space/ambient.mp4"; // Ambient może zostać tam gdzie jest
+    const githubBaseUrl = "https://pogromcaev01.github.io/hijuhuajo-radio/";
+    const ambientFile = "https://aelwyd.space/ambient.mp4"; 
+
+    // --- KONFIGURACJA FOLDERÓW ---
+    // Ustal, ile plików pakujesz do jednego folderu.
+    // Skrypt użyje tego, aby automatycznie odgadnąć odpowiedni folder (audios1, audios2 itd.)
+    const folderPrefix = "audios"; // Początek nazwy każdego z folderów
+    const filesPerFolder = 100;    // Ile maksymalnie plików jest w jednym folderze? (Zmień jeśli pakujesz po 50 lub 500)
 
     let idMap = {};
     let ramowkaData = [];
@@ -332,7 +337,7 @@
             const ramRes = await fetch("ramowka.json");
             ramowkaData = await ramRes.json();
 
-            // 2. Pobieranie listy i płaskie mapowanie plików 1.mp3, 2.mp3 itd.
+            // 2. Pobieranie listy i przydzielanie folderów
             const csvRes = await fetch("anime_lista.csv");
             const text = await csvRes.text();
             const lines = text.trim().split('\n');
@@ -353,13 +358,19 @@
                 if (durParts.length === 3) durSec = durParts[0] * 3600 + durParts[1] * 60 + durParts[2];
                 else if (durParts.length === 2) durSec = durParts[0] * 60 + durParts[1];
 
-                const currentId = fileIdCounter.toString();
+                const currentIdNum = fileIdCounter;
+                const currentId = currentIdNum.toString();
                 
-                // Mapujemy wiersz CSV do pliku na GitHubie o nazwie {counter}.mp3
+                // KALKULACJA FOLDERU
+                // Matematyczne sprawdzenie, w którym przedziale leży plik (np. 143 / 100 zaokrąglone w górę daje 2, czyli audios2)
+                const folderIndex = Math.ceil(currentIdNum / filesPerFolder);
+                const assignedFolder = `${folderPrefix}${folderIndex}`;
+                
+                // Tworzenie końcowego adresu URL
                 idMap[currentId] = {
-                    url: `${githubBaseUrl}${currentId}.mp3`,
+                    url: `${githubBaseUrl}${assignedFolder}/${currentId}.mp3`,
                     duration: durSec,
-                    folderName: "G_HUB_STREAM",
+                    folderName: `STREAM // ${assignedFolder.toUpperCase()}`,
                     cleanName: originalTitle
                 };
 
@@ -448,7 +459,7 @@
             }
         }
 
-        trackArtist.innerText = `> ${track.folderName.toUpperCase()}`;
+        trackArtist.innerText = `> ${track.folderName}`;
         trackName.innerText = track.cleanName;
     }
 
